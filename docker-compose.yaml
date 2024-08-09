@@ -1,0 +1,39 @@
+version: "3"
+services:
+  curl:
+    image:  alpine/curl:latest
+    container_name: curl
+    command: ["-v","-k", "otelcollector:4318/v1/metrics","-H", "Content-Type: application/json", "-d", "@script.json"]
+    depends_on: [otelcollector]
+    volumes:
+      - ./script.json:/script.json    
+  # telemetrygen:
+  #   image: ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:latest #v0.71.0
+  #   container_name: telemetrygen
+  #   command: ["metrics","--otlp-endpoint", "otelcollector:4317", "--otlp-insecure", "--duration", "10m", "--rate", "100"]
+  #   depends_on: 
+  #     - otelcollector
+
+  #OpenTelemetry Collector
+  otelcollector:
+    image:  quay.io/signalfx/splunk-otel-collector:latest-amd64
+    container_name: otelcollector-container
+    command: ["--config=/etc/otel-collector-config.yml", "--set=service.telemetry.logs.level=debug"]
+    environment:
+      - SPLUNK_ACCESS_TOKEN=${SPLUNK_ACCESS_TOKEN}
+      - REALM=${SPLUNK_REALM}
+    volumes:
+      - ./otel-collector-config.yml:/etc/otel-collector-config.yml
+    ports:
+    - 4317:4317
+    - 4318:4318
+    - 13133:13133
+    - 1888:1888
+    - 55679:55679
+    pull_policy: always
+   
+networks:
+  default:
+    name: mynetwork
+    external: false
+
